@@ -17,7 +17,7 @@ jobs:
         mkdir -p ~/.ssh
         echo "${{ secrets.JUMP_HOST_PRIVATE_KEY }}" > ~/.ssh/id_rsa
         chmod 600 ~/.ssh/id_rsa
-        ssh-keyscan -H ubuntu-jumphost-sit01 >> ~/.ssh/known_hosts
+        ssh-keyscan -H 20.56.159.75 >> ~/.ssh/known_hosts
 
     - name: Deploy with Liquibase via Jump Host
       run: |
