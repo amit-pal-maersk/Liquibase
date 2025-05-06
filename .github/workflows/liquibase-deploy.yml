@@ -21,10 +21,7 @@ jobs:
         mkdir -p ~/.ssh
         echo "${{ secrets.JUMP_HOST_PRIVATE_KEY }}" > ~/.ssh/id_rsa  # Use GitHub secret for private key
         chmod 600 ~/.ssh/id_rsa  # Set the correct permissions for the private key
-
-    - name: Add jump host to known hosts
-      run: |
-        ssh-keyscan -H 20.56.159.75 >> ~/.ssh/known_hosts  # Add the jump host IP to known_hosts to prevent SSH prompts
+        ssh-keyscan -H 20.56.159.75 >> ~/.ssh/known_hosts
 
     - name: Deploy with Liquibase via Jump Host
       run: |
