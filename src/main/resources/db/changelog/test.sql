@@ -1,5 +1,5 @@
 --liquibase formatted sql
---changeset Amit:insert
+--changeset Amit:insert_2
 --tag v2.0
 insert into person (name, address1, address2, city) values
     ('John Doe', '123 Elm St', 'Apt 4B', 'Springfield'),
