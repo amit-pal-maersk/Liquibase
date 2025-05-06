@@ -27,8 +27,17 @@ jobs:
         run: |
           ssh -i ~/.ssh/id_rsa pgadmin@20.56.159.75 << 'EOF'
             set -e
-            sudo su - root 
-            sudo git -C /root/Liquibase pull origin main --rebase
-              mvn liquibase:update
-            
-          EOF
+            sudo su - root
+            cd /root/Liquibase
+
+            # Check for unstaged changes
+            if ! git diff --quiet || ! git diff --cached --quiet; then
+              echo "Unstaged changes detected. Stashing changes before pull."
+              git stash
+              git pull origin main --rebase
+              git stash pop
+            else
+              git pull origin main --rebase
+            fi
+
+
