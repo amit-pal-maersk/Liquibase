@@ -2,28 +2,35 @@ name: Liquibase Deploy via Jump Host
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - main  # Trigger on push to the main branch
+  workflow_dispatch:  # Allow manual trigger via GitHub UI
 
 jobs:
-  deploy:
-    runs-on: ubuntu-latest
+  liquibase-deploy:
+    runs-on: ubuntu-latest  # GitHub Actions will use the latest Ubuntu runner
 
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v3
+    - name: Checkout repository
+      uses: actions/checkout@v2
+      with:
+        ref: main  # Make sure we're working with the latest code from the main branch
 
-    - name: Setup SSH for Jump Host
+    - name: Set up SSH key for jump host
       run: |
         mkdir -p ~/.ssh
-        echo "${{ secrets.JUMP_HOST_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-        chmod 600 ~/.ssh/id_rsa
-        ssh-keyscan -H 20.56.159.75 >> ~/.ssh/known_hosts
+        echo "${{ secrets.JUMP_HOST_PRIVATE_KEY }}" > ~/.ssh/id_rsa  # Use GitHub secret for private key
+        chmod 600 ~/.ssh/id_rsa  # Set the correct permissions for the private key
+
+    - name: Add jump host to known hosts
+      run: |
+        ssh-keyscan -H 20.56.159.75 >> ~/.ssh/known_hosts  # Add the jump host IP to known_hosts to prevent SSH prompts
 
     - name: Deploy with Liquibase via Jump Host
       run: |
-        ssh -i ~/.ssh/id_rsa ubuntu@20.56.159.75 <<'EOF'
+        ssh -i ~/.ssh/id_rsa ubuntu@20.56.159.75 << 'EOF'
           set -e
-          cd /opt/liquibase-db-deploy
-          git pull origin main
-          mvn liquibase:update
+          cd /root/Liquibase
+          git pull origin main  # Pull the latest code from the main branch
+          mvn liquibase:update  # Apply the Liquibase update
         EOF
