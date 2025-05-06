@@ -28,15 +28,14 @@ jobs:
           ssh -i ~/.ssh/id_rsa pgadmin@20.56.159.75 << 'EOF'
             set -e
             sudo su - root
-            cd /root/Liquibase
 
-            # Check for unstaged changes
-            if ! git diff --quiet || ! git diff --cached --quiet; then
-              echo "Unstaged changes detected. Stashing changes before pull."
-              git stash
-              git pull origin main --rebase
-              git stash pop
+            # Clone the repository if it doesn't exist
+            if [ ! -d "/root/Liquibase" ]; then
+              echo "Cloning repository..."
+              git clone https://github.com/your-username/your-repository.git /root/Liquibase
             else
+              echo "Repository already exists. Pulling latest changes..."
+              cd /root/Liquibase
               git pull origin main --rebase
             fi
 
@@ -48,5 +47,6 @@ jobs:
             fi
 
             # Run Liquibase update
+            cd /root/Liquibase
             mvn liquibase:update
           EOF
