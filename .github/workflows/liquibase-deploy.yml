@@ -21,7 +21,7 @@ jobs:
 
     - name: Deploy with Liquibase via Jump Host
       run: |
-        ssh -i ~/.ssh/id_rsa ubuntu@ubuntu-jumphost-sit01 <<'EOF'
+        ssh -i ~/.ssh/id_rsa ubuntu@20.56.159.75 <<'EOF'
           set -e
           cd /opt/liquibase-db-deploy
           git pull origin main
