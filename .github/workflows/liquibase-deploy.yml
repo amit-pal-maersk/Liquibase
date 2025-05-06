@@ -1,0 +1,29 @@
+name: Liquibase Deploy via Jump Host
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Setup SSH for Jump Host
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.JUMP_HOST_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan -H ubuntu-jumphost-sit01 >> ~/.ssh/known_hosts
+
+    - name: Deploy with Liquibase via Jump Host
+      run: |
+        ssh -i ~/.ssh/id_rsa ubuntu@ubuntu-jumphost-sit01 <<'EOF'
+          set -e
+          cd /opt/liquibase-db-deploy
+          git pull origin main
+          mvn liquibase:update
+        EOF
