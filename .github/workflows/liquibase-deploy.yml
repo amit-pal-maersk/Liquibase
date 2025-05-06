@@ -27,9 +27,8 @@ jobs:
         run: |
           ssh -i ~/.ssh/id_rsa pgadmin@20.56.159.75 << 'EOF'
             set -e
-            sudo su - root << 'EOROOT'
-              cd /root/Liquibase
-              git pull origin main
+            sudo su - root 
+            sudo git -C /root/Liquibase pull origin main --rebase
               mvn liquibase:update
-            EOROOT
+            
           EOF
