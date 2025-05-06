@@ -1,34 +1,35 @@
-name: Liquibase Deploy via Jump Host
+name: Liquibase Deployment via Jump Host
 
 on:
   push:
     branches:
-      - main  # Trigger on push to the main branch
-  workflow_dispatch:  # Allow manual trigger via GitHub UI
+      - main
 
 jobs:
-  liquibase-deploy:
-    runs-on: ubuntu-latest  # GitHub Actions will use the latest Ubuntu runner
+  deploy:
+    runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
-      with:
-        ref: main  # Make sure we're working with the latest code from the main branch
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Set up SSH key for jump host
-      run: |
-        mkdir -p ~/.ssh
-        echo "${{ secrets.JUMP_HOST_PRIVATE_KEY }}" > ~/.ssh/id_rsa  # Use GitHub secret for private key
-        chmod 600 ~/.ssh/id_rsa  # Set the correct permissions for the private key
-        ssh-keyscan -H 20.56.159.75 >> ~/.ssh/known_hosts
-        
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.JUMP_HOST_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
 
-    - name: Deploy with Liquibase via Jump Host
-      run: |
-        ssh -i ~/.ssh/id_rsa pgadmin@20.56.159.75 << 'EOF'
-          set -e
-          cd /root/Liquibase
-          git pull origin main  # Pull the latest code from the main branch
-          mvn liquibase:update  # Apply the Liquibase update
-        EOF
+      - name: Add Jump Host to known_hosts
+        run: |
+          ssh-keyscan -H 20.56.159.75 >> ~/.ssh/known_hosts
+
+      - name: Deploy Liquibase Changes via Jump Host
+        run: |
+          ssh -i ~/.ssh/id_rsa pgadmin@20.56.159.75 << 'EOF'
+            set -e
+            sudo su - root << 'EOROOT'
+              cd /root/Liquibase
+              git pull origin main
+              mvn liquibase:update
+            EOROOT
+          EOF
