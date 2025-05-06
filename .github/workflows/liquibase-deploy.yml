@@ -22,10 +22,11 @@ jobs:
         echo "${{ secrets.JUMP_HOST_PRIVATE_KEY }}" > ~/.ssh/id_rsa  # Use GitHub secret for private key
         chmod 600 ~/.ssh/id_rsa  # Set the correct permissions for the private key
         ssh-keyscan -H 20.56.159.75 >> ~/.ssh/known_hosts
+        
 
     - name: Deploy with Liquibase via Jump Host
       run: |
-        ssh -i ~/.ssh/id_rsa ubuntu@20.56.159.75 << 'EOF'
+        ssh -i ~/.ssh/id_rsa pgadmin@20.56.159.75 << 'EOF'
           set -e
           cd /root/Liquibase
           git pull origin main  # Pull the latest code from the main branch
