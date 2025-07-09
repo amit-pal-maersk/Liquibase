@@ -25,7 +25,7 @@ jobs:
 
       - name: Deploy Liquibase Changes via Jump Host
         run: |
-          ssh -i ~/.ssh/id_rsa pgadmin@98.71.128.2185 << 'EOF'
+          ssh -i ~/.ssh/id_rsa pgadmin@98.71.128.218 << 'EOF'
             set -e
             sudo su - root
 
