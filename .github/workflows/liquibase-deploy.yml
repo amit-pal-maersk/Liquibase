@@ -32,7 +32,7 @@ jobs:
             # Clone the repository if it doesn't exist
             if [ ! -d "/mnt/Liquibase" ]; then
               echo "Cloning repository..."
-              git clone https://github.com/amit-pal-maersk/Liquibase.git /root/Liquibase
+              git clone https://github.com/amit-pal-maersk/Liquibase.git /mnt/Liquibase
             else
               echo "Repository already exists. Pulling latest changes..."
               cd /mnt/Liquibase
