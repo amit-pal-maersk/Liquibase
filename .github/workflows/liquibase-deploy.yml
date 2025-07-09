@@ -21,11 +21,11 @@ jobs:
 
       - name: Add Jump Host to known_hosts
         run: |
-          ssh-keyscan -H 20.56.159.75 >> ~/.ssh/known_hosts
+          ssh-keyscan -H 98.71.128.218 >> ~/.ssh/known_hosts
 
       - name: Deploy Liquibase Changes via Jump Host
         run: |
-          ssh -i ~/.ssh/id_rsa pgadmin@20.56.159.75 << 'EOF'
+          ssh -i ~/.ssh/id_rsa pgadmin@98.71.128.2185 << 'EOF'
             set -e
             sudo su - root
 
