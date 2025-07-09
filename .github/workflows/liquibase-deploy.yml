@@ -30,20 +30,20 @@ jobs:
             sudo su - root
 
             # Clone the repository if it doesn't exist
-            if [ ! -d "/root/Liquibase" ]; then
+            if [ ! -d "/mnt/Liquibase" ]; then
               echo "Cloning repository..."
               git clone https://github.com/amit-pal-maersk/Liquibase.git /root/Liquibase
             else
               echo "Repository already exists. Pulling latest changes..."
-              cd /root/Liquibase
+              cd /mnt/Liquibase
               git pull origin main --rebase
             fi
 
             # Ensure Maven is installed
             if ! command -v mvn &> /dev/null; then
               echo "Maven not found. Installing Maven."
-              apt-get update
-              apt-get install -y maven
+              yum update
+              yum install -y maven
             fi
 
             # Run Liquibase update
