@@ -47,6 +47,6 @@ jobs:
             fi
 
             # Run Liquibase update
-            cd /root/Liquibase
+            cd /mnt/Liquibase
             mvn liquibase:update
           EOF
