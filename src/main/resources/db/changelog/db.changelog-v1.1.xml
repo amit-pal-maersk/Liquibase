@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="
+                     http://www.liquibase.org/xml/ns/dbchangelog
+                     http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="2" author="dev_team">
+        <addColumn tableName="person">
+            <column name="username" type="VARCHAR(50)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+        <rollback>
+            <dropColumn tableName="person" columnName="username"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="tag-v1.1" author="dev_team">
+        <tagDatabase tag="v1.1"/>
+    </changeSet>
+
+</databaseChangeLog>
