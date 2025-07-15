@@ -5,7 +5,7 @@
                      http://www.liquibase.org/xml/ns/dbchangelog
                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
 
-    <changeSet id="3" author="dev_team">
+    <changeSet id="3" author="amit">
         <createTable tableName="state">
             <column name="code" type="CHAR(2)">
                 <constraints primaryKey="true" nullable="false"/>
@@ -14,7 +14,7 @@
         </createTable>
     </changeSet>
 
-    <changeSet id="4" author="dev_team">
+    <changeSet id="4" author="amit">
         <addForeignKeyConstraint baseTableName="person"
                                   baseColumnNames="state"
                                   referencedTableName="state"
