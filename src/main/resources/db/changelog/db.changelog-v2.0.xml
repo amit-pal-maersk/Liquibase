@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="
+                     http://www.liquibase.org/xml/ns/dbchangelog
+                     http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="3" author="dev_team">
+        <createTable tableName="state">
+            <column name="code" type="CHAR(2)">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(100)"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="4" author="dev_team">
+        <addForeignKeyConstraint baseTableName="person"
+                                  baseColumnNames="state"
+                                  referencedTableName="state"
+                                  referencedColumnNames="code"
+                                  constraintName="fk_person_state"/>
+        <rollback>
+            <dropForeignKeyConstraint baseTableName="person"
+                                      constraintName="fk_person_state"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="tag-v2.0" author="dev_team">
+        <tagDatabase tag="v2.0"/>
+    </changeSet>
+
+</databaseChangeLog>
