@@ -1,33 +1,44 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
-                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                   xsi:schemaLocation="
-                     http://www.liquibase.org/xml/ns/dbchangelog
-                     http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+<databaseChangeLog xmlns=...>
 
-    <changeSet id="3" author="amit">
-        <createTable tableName="state">
-            <column name="code" type="CHAR(2)">
-                <constraints primaryKey="true" nullable="false"/>
-            </column>
-            <column name="name" type="VARCHAR(100)"/>
-        </createTable>
-    </changeSet>
+  <!-- 1 Create state table -->
+  <changeSet id="3" author="amit">
+    <createTable tableName="state">
+      <column name="code" type="CHAR(2)">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+      <column name="name" type="VARCHAR(100)"/>
+    </createTable>
+  </changeSet>
 
-    <changeSet id="4" author="amit">
-        <addForeignKeyConstraint baseTableName="person"
-                                  baseColumnNames="state"
-                                  referencedTableName="state"
-                                  referencedColumnNames="code"
-                                  constraintName="fk_person_state"/>
-        <rollback>
-            <dropForeignKeyConstraint baseTableName="person"
-                                      constraintName="fk_person_state"/>
-        </rollback>
-    </changeSet>
+  <!-- 2️ Add state column to person -->
+  <changeSet id="4" author="amit">
+    <addColumn tableName="person">
+      <column name="state" type="CHAR(2)">
+        <constraints nullable="true"/>
+      </column>
+    </addColumn>
+    <rollback>
+      <dropColumn tableName="person" columnName="state"/>
+    </rollback>
+  </changeSet>
 
-    <changeSet id="tag-v2.0" author="dev_team">
-        <tagDatabase tag="v2.0"/>
-    </changeSet>
+  <!-- 3️ Now add the FK constraint -->
+  <changeSet id="5" author="amit">
+    <addForeignKeyConstraint
+      baseTableName="person"
+      baseColumnNames="state"
+      referencedTableName="state"
+      referencedColumnNames="code"
+      constraintName="fk_person_state"/>
+    <rollback>
+      <dropForeignKeyConstraint baseTableName="person"
+        constraintName="fk_person_state"/>
+    </rollback>
+  </changeSet>
+
+  <!-- 4️ Tag version -->
+  <changeSet id="tag-v2.0" author="amit">
+    <tagDatabase tag="v2.0"/>
+  </changeSet>
 
 </databaseChangeLog>
