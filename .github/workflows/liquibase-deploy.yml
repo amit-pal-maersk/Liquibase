@@ -49,5 +49,5 @@ jobs:
             # Run Liquibase update
             cd /mnt/Liquibase
             mvn liquibase:update
-            mvn liquibase:history
+            
           EOF
