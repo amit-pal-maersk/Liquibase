@@ -1,0 +1,53 @@
+name: Liquibase Deployment via Jump Host
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.JUMP_HOST_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+      - name: Add Jump Host to known_hosts
+        run: |
+          ssh-keyscan -H 98.71.128.218 >> ~/.ssh/known_hosts
+
+      - name: Deploy Liquibase Changes via Jump Host
+        run: |
+          ssh -i ~/.ssh/id_rsa pgadmin@98.71.128.218 << 'EOF'
+            set -e
+            sudo su - root
+
+            # Clone the repository if it doesn't exist
+            if [ ! -d "/mnt/Liquibase" ]; then
+              echo "Cloning repository..."
+              git clone https://github.com/amit-pal-maersk/Liquibase.git /mnt/Liquibase
+            else
+              echo "Repository already exists. Pulling latest changes..."
+              cd /mnt/Liquibase
+              git pull origin main --rebase
+            fi
+
+            # Ensure Maven is installed
+            if ! command -v mvn &> /dev/null; then
+              echo "Maven not found. Installing Maven."
+              yum update
+              yum install -y maven
+            fi
+
+            # Run Liquibase update
+            cd /mnt/Liquibase
+            mvn liquibase:update
+            mvn liquibase:history
+          EOF
