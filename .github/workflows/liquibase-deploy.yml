@@ -1,16 +1,31 @@
 name: Liquibase Deployment via Jump Host
 
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: 'Liquibase command to run'
+        required: true
+        type: choice
+        default: update
+        options:
+          - update
+          - rollback
+          - updateToTag
+          - history
+          - clearCheckSums
+      tag:
+        description: 'Tag for rollback/updateToTag (optional)'
+        required: false
+        type: string
+        default: 'v1.0'
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v3
 
       - name: Setup SSH key
@@ -21,32 +36,38 @@ jobs:
 
       - name: Add Jump Host to known_hosts
         run: |
-          ssh-keyscan -H 98.71.128.218 >> ~/.ssh/known_hosts
+          ssh-keyscan -H ${{ secrets.JUMP_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Deploy Liquibase Changes via Jump Host
+      - name: Run Liquibase via Jump Host
         run: |
-          ssh -i ~/.ssh/id_rsa pgadmin@98.71.128.218 << 'EOF'
+          ssh -i ~/.ssh/id_rsa pgadmin@${{ secrets.JUMP_HOST }} << 'EOF'
             set -e
-            sudo su - root
-
-            # Clone the repository if it doesn't exist
-            if [ ! -d "/mnt/Liquibase" ]; then
-              echo "Cloning repository..."
-              git clone https://github.com/amit-pal-maersk/Liquibase.git /mnt/Liquibase
-            else
-              echo "Repository already exists. Pulling latest changes..."
-              cd /mnt/Liquibase
-              git pull origin main --rebase
-            fi
-
-            # Ensure Maven is installed
-            if ! command -v mvn &> /dev/null; then
-              echo "Maven not found. Installing Maven."
-              yum update
-              yum install -y maven
-            fi
-
-            # Run Liquibase update
             cd /mnt/Liquibase
-            mvn liquibase:update
+
+            case "${{ github.event.inputs.operation }}" in
+              update)
+                echo ":: Running liquibase:update"
+                mvn liquibase:update
+                ;;
+              rollback)
+                echo ":: Running liquibase:rollback to tag ${{ github.event.inputs.tag }}"
+                mvn liquibase:rollback -Dliquibase.rollbackTag=${{ github.event.inputs.tag }}
+                ;;
+              updateToTag)
+                echo ":: Running liquibase:update-to-tag to ${{ github.event.inputs.tag }}"
+                mvn liquibase:update-to-tag -Dliquibase.updateToTag=${{ github.event.inputs.tag }}
+                ;;
+              history)
+                echo ":: Running liquibase:history"
+                mvn liquibase:history
+                ;;
+              clearCheckSums)
+                echo ":: Running liquibase:clearCheckSums"
+                mvn liquibase:clearCheckSums
+                ;;
+              *)
+                echo ":: Error: Unknown operation '${{ github.event.inputs.operation }}'"
+                exit 1
+                ;;
+            esac
           EOF
