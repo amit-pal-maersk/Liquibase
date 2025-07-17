@@ -77,7 +77,7 @@ jobs:
             fi
             # Run Liquibase update (relies on liquibase.properties)
             cd /mnt/Liquibase
-            mvn liquibase:update
-            
+            mvn liquibase:rollback -Dliquibase.rollbackCount=5
+
             echo "Liquibase deployment completed successfully"
           EOF
