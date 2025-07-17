@@ -1,5 +1,5 @@
 --liquibase formatted sql
---changeset Amit:insert_3 
+--changeset Amit:insert_1 
 
 -- INSERT into department
 insert into department (name, address1, address2, city) values
@@ -16,6 +16,6 @@ insert into company (name, address1, address2, city) values
 --rollback delete from company where name in ('Acme Corp','Beta Enterprises','Gamma Solutions');
 
 -- UPDATE person set country
-update department set country = 'US' where country is null;
+update department set country = 'india' where country is null;
 --rollback update person set country = null where name in ('amit','pal','sudeep');
 
