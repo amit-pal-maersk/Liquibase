@@ -1,17 +1,51 @@
-name: Liquibase Deployment via Jump Host
+name: Liquibase CI/CD Pipeline
 
 on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
-  deploy:
+  ci:
     runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Cache Maven packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+
+      - name: Run Tests
+        run: |
+          cd /mnt/Liquibase
+          mvn test
+
+      - name: Build with Maven
+        run: |
+          cd /mnt/Liquibase
+          mvn clean package -DskipTests
+
+  cd:
+    needs: ci
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup SSH key
         run: |
@@ -29,25 +63,26 @@ jobs:
             set -e
             sudo su - root
 
-            # Clone the repository if it doesn't exist
+            # Clone or update repository
             if [ ! -d "/mnt/Liquibase" ]; then
               echo "Cloning repository..."
               git clone https://github.com/amit-pal-maersk/Liquibase.git /mnt/Liquibase
             else
-              echo "Repository already exists. Pulling latest changes..."
+              echo "Repository exists. Pulling latest changes..."
               cd /mnt/Liquibase
               git pull origin main --rebase
             fi
 
             # Ensure Maven is installed
             if ! command -v mvn &> /dev/null; then
-              echo "Maven not found. Installing Maven."
-              yum update
+              echo "Maven not found. Installing Maven..."
+              yum update -y
               yum install -y maven
             fi
 
-            # Run Liquibase update
+            # Run Liquibase update (relies on liquibase.properties)
             cd /mnt/Liquibase
             mvn liquibase:update
             
+            echo "Liquibase deployment completed successfully"
           EOF
