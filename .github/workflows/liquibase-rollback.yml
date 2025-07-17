@@ -1,4 +1,4 @@
-name: Liquibase CI/CD Pipeline
+name: Liquibase Rollback
 
 on:
   workflow_dispatch:
