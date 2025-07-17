@@ -1,5 +1,5 @@
 --liquibase formatted sql
---changeset Amit:insert_4 tag:v2.0
+--changeset Amit:insert_4
 
 -- INSERT into department
 insert into department (name, address1, address2, city) values
