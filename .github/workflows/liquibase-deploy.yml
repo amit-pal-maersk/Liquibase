@@ -83,6 +83,7 @@ jobs:
 
               echo "[INFO] Running Liquibase update..."
               cd /mnt/liquibaseproject
+              export PATH=/mnt/liquibase-software:$PATH
               liquibase update
               liquibase history
 
