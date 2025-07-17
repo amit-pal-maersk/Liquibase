@@ -1,0 +1,92 @@
+name: Liquibase Deploy
+
+on:
+  workflow_dispatch:
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Cache Maven packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+
+      - name: Run Tests
+        run: mvn test
+
+      - name: Build with Maven
+        run: mvn clean package -DskipTests
+
+  cd:
+    needs: ci
+    runs-on: ubuntu-latest
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.JUMP_HOST_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+      - name: Add Jump Host to known_hosts
+        run: ssh-keyscan -H 98.71.128.218 >> ~/.ssh/known_hosts
+
+      - name: Deploy Liquibase Changes via Jump Host
+        run: |
+          ssh -i ~/.ssh/id_rsa pgadmin@98.71.128.218 << 'EOF'
+            set -e
+
+            echo "[INFO] Switching to root user..."
+            sudo bash -c '
+              set -e
+
+              echo "[INFO] Ensure directories exist..."
+              mkdir -p /mnt/liquibase-software /mnt/liquibaseproject
+
+              echo "[INFO] Installing Liquibase CLI if missing..."
+              if ! command -v liquibase &> /dev/null; then
+                cd /mnt/liquibase-software
+                curl -sL https://github.com/liquibase/liquibase/releases/download/v4.26.0/liquibase-4.26.0.tar.gz -o liquibase.tar.gz
+                tar -xzf liquibase.tar.gz -C /mnt/liquibase-software
+                rm liquibase.tar.gz
+                rm -rf /usr/local/bin/liquibase
+                chmod +x /mnt/liquibase-software/liquibase
+                ln -sf /mnt/liquibase-software/liquibase /usr/local/bin/liquibase
+                echo "[INFO] Liquibase CLI installed."
+              else
+                echo "[INFO] Liquibase already installed."
+              fi
+
+              echo "[INFO] Cloning or updating Liquibase project in /mnt/liquibaseproject..."
+              if [ ! -d "/mnt/liquibaseproject/.git" ]; then
+                git clone https://github.com/amit-pal-maersk/Liquibase.git /mnt/liquibaseproject
+              else
+                cd /mnt/liquibaseproject
+                git pull origin main --rebase
+              fi
+
+              echo "[INFO] Running Liquibase update..."
+              cd /mnt/liquibaseproject
+              export PATH=/mnt/liquibase-software:$PATH
+              liquibase update
+              liquibase history
+
+              echo "[INFO] Liquibase deployment completed successfully."
+            '
+          EOF
