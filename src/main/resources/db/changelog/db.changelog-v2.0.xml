@@ -6,7 +6,7 @@
                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
 
   <!-- 1 Create state table -->
-  <changeSet id="3" author="amit">
+  <changeSet id="5" author="amit">
     <createTable tableName="state">
       <column name="code" type="CHAR(2)">
         <constraints primaryKey="true" nullable="false"/>
@@ -16,7 +16,7 @@
   </changeSet>
 
   <!-- 2️ Add state column to person -->
-  <changeSet id="4" author="amit">
+  <changeSet id="6" author="amit">
     <addColumn tableName="person">
       <column name="state" type="CHAR(2)">
         <constraints nullable="true"/>
@@ -28,7 +28,7 @@
   </changeSet>
 
   <!-- 3️ Now add the FK constraint -->
-  <changeSet id="5" author="amit">
+  <changeSet id="7" author="amit">
     <addForeignKeyConstraint
       baseTableName="person"
       baseColumnNames="state"
@@ -42,7 +42,7 @@
   </changeSet>
 
   <!-- 4️ Tag version -->
-  <changeSet id="tag-v2.0" author="amit">
+  <changeSet id="8" author="amit">
     <tagDatabase tag="v2.0"/>
   </changeSet>
 
