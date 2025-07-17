@@ -24,17 +24,15 @@ jobs:
           restore-keys: ${{ runner.os }}-m2
 
       - name: Run Tests
-        run: |
-          mvn test
+        run: mvn test
 
       - name: Build with Maven
-        run: |
-          mvn clean package -DskipTests
+        run: mvn clean package -DskipTests
 
   cd:
     needs: ci
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
 
     steps:
       - name: Checkout code
@@ -47,43 +45,52 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
 
       - name: Add Jump Host to known_hosts
-        run: |
-          ssh-keyscan -H 98.71.128.218 >> ~/.ssh/known_hosts
+        run: ssh-keyscan -H 98.71.128.218 >> ~/.ssh/known_hosts
 
       - name: Deploy Liquibase Changes via Jump Host (CLI)
         run: |
           ssh -i ~/.ssh/id_rsa pgadmin@98.71.128.218 << 'EOF'
             set -e
 
-            echo "[INFO] Switching to root user..."
-            sudo su - root
+            # Switch to root
+            sudo su - root -c /bin/bash << 'INNER_EOF'
 
-            echo "[INFO] Cloning or updating Liquibase repo..."
-            if [ ! -d "/mnt/Liquibase" ]; then
-              git clone https://github.com/amit-pal-maersk/Liquibase.git /mnt/Liquibase
-            else
-              cd /mnt/Liquibase
-              git pull origin main --rebase
-            fi
+              echo "[INFO] Ensure /mnt/liquibase and /mnt/liquibaseproject directories exist..."
+              mkdir -p /mnt/liquibase
+              mkdir -p /mnt/liquibaseproject
 
-            echo "[INFO] Installing Liquibase CLI if missing..."
-            if ! command -v liquibase &> /dev/null; then
-              curl -sL https://github.com/liquibase/liquibase/releases/download/v4.26.0/liquibase-4.26.0.tar.gz -o liquibase.tar.gz
-              tar -xzf liquibase.tar.gz
-              mv liquibase /usr/local/bin/
-              echo "[INFO] Liquibase installed."
-            fi
+              echo "[INFO] Installing Liquibase CLI if missing in /mnt/liquibase..."
+              if ! command -v liquibase &> /dev/null; then
+                cd /mnt/liquibase
+                curl -sL https://github.com/liquibase/liquibase/releases/download/v4.26.0/liquibase-4.26.0.tar.gz -o liquibase.tar.gz
+                tar -xzf liquibase.tar.gz --strip-components=1
+                rm liquibase.tar.gz
+                ln -sf /mnt/liquibase/liquibase /usr/local/bin/liquibase
+                echo "[INFO] Liquibase installed."
+              else
+                echo "[INFO] Liquibase CLI already installed."
+              fi
 
-            echo "[INFO] Running Liquibase update..."
-            cd /mnt/Liquibase
+              echo "[INFO] Cloning or updating Liquibase project in /mnt/liquibaseproject..."
+              if [ ! -d "/mnt/liquibaseproject/.git" ]; then
+                git clone https://github.com/amit-pal-maersk/Liquibase.git /mnt/liquibaseproject
+              else
+                cd /mnt/liquibaseproject
+                git pull origin main --rebase
+              fi
 
-            if [ ! -f "liquibase.properties" ]; then
-              echo "[ERROR] liquibase.properties not found in /mnt/Liquibase"
-              exit 1
-            fi
+              echo "[INFO] Running Liquibase update from /mnt/liquibaseproject..."
+              cd /mnt/liquibaseproject
 
-            liquibase update
-            liquibase history
+              if [ ! -f "liquibase.properties" ]; then
+                echo "[ERROR] liquibase.properties not found in /mnt/liquibaseproject"
+                exit 1
+              fi
 
-            echo "[INFO] Liquibase deployment completed successfully"
+              liquibase update
+              liquibase history
+
+              echo "[INFO] Liquibase deployment completed successfully"
+
+            INNER_EOF
           EOF
