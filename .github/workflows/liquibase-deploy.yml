@@ -47,28 +47,28 @@ jobs:
       - name: Add Jump Host to known_hosts
         run: ssh-keyscan -H 98.71.128.218 >> ~/.ssh/known_hosts
 
-      - name: Deploy Liquibase Changes via Jump Host (CLI)
+      - name: Deploy Liquibase Changes via Jump Host
         run: |
           ssh -i ~/.ssh/id_rsa pgadmin@98.71.128.218 << 'EOF'
             set -e
 
-            # Switch to root
-            sudo su - root -c /bin/bash << 'INNER_EOF'
+            echo "[INFO] Switching to root user..."
+            sudo bash -c '
+              set -e
 
-              echo "[INFO] Ensure /mnt/liquibase and /mnt/liquibaseproject directories exist..."
-              mkdir -p /mnt/liquibase
-              mkdir -p /mnt/liquibaseproject
+              echo "[INFO] Ensure directories exist..."
+              mkdir -p /mnt/liquibase /mnt/liquibaseproject
 
-              echo "[INFO] Installing Liquibase CLI if missing in /mnt/liquibase..."
+              echo "[INFO] Installing Liquibase CLI if missing..."
               if ! command -v liquibase &> /dev/null; then
                 cd /mnt/liquibase
                 curl -sL https://github.com/liquibase/liquibase/releases/download/v4.26.0/liquibase-4.26.0.tar.gz -o liquibase.tar.gz
                 tar -xzf liquibase.tar.gz --strip-components=1
                 rm liquibase.tar.gz
                 ln -sf /mnt/liquibase/liquibase /usr/local/bin/liquibase
-                echo "[INFO] Liquibase installed."
+                echo "[INFO] Liquibase CLI installed."
               else
-                echo "[INFO] Liquibase CLI already installed."
+                echo "[INFO] Liquibase already installed."
               fi
 
               echo "[INFO] Cloning or updating Liquibase project in /mnt/liquibaseproject..."
@@ -79,18 +79,16 @@ jobs:
                 git pull origin main --rebase
               fi
 
-              echo "[INFO] Running Liquibase update from /mnt/liquibaseproject..."
+              echo "[INFO] Running Liquibase update..."
               cd /mnt/liquibaseproject
-
-              if [ ! -f "liquibase.properties" ]; then
-                echo "[ERROR] liquibase.properties not found in /mnt/liquibaseproject"
+              if [ ! -f liquibase.properties ]; then
+                echo "[ERROR] liquibase.properties not found!"
                 exit 1
               fi
 
               liquibase update
               liquibase history
 
-              echo "[INFO] Liquibase deployment completed successfully"
-
-            INNER_EOF
+              echo "[INFO] Liquibase deployment completed successfully."
+            '
           EOF
