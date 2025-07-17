@@ -99,6 +99,7 @@ jobs:
         run: |
           ssh -i ~/.ssh/id_rsa pgadmin@${{ env.SSH_HOST }} << 'EOF'
             set -e
+            sudo su - root
             # Ensure directory exists and has permissions
             sudo mkdir -p ${{ env.REPO_DIR }}
             sudo chown -R pgadmin:pgadmin ${{ env.REPO_DIR }}
