@@ -25,6 +25,6 @@ create table company (
 
 --changeset amit:3 labels: table-company-update context: dev
 --comment: example comment
-alter table person add column country varchar(2)
+alter table department add column country varchar(2)
 --rollback ALTER TABLE person DROP COLUMN country;
 
