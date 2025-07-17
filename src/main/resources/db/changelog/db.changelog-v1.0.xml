@@ -16,7 +16,7 @@
     </changeSet>
 
     <!-- Tag version baseline -->
-    <changeSet id="tag-v1.0" author="amit">
+    <changeSet id="2" author="amit">
         <tagDatabase tag="v1.0"/>
     </changeSet>
 
