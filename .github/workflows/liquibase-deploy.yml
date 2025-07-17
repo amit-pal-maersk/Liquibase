@@ -1,5 +1,4 @@
 name: Liquibase CI/CD Pipeline
-
 on:
   push:
     branches:
