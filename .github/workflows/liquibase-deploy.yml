@@ -3,7 +3,6 @@ name: Liquibase Deploy
 on:
   workflow_dispatch:
 
-
 jobs:
   ci:
     runs-on: ubuntu-latest
@@ -26,18 +25,16 @@ jobs:
 
       - name: Run Tests
         run: |
-          # Use the workspace directory where the repo is cloned
-          cd ${GITHUB_WORKSPACE}
           mvn test
+
       - name: Build with Maven
         run: |
-          # Use the workspace directory where the repo is cloned
-          cd ${GITHUB_WORKSPACE}
           mvn clean package -DskipTests
+
   cd:
     needs: ci
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'  && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
 
     steps:
       - name: Checkout code
@@ -48,33 +45,45 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.JUMP_HOST_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
+
       - name: Add Jump Host to known_hosts
         run: |
           ssh-keyscan -H 98.71.128.218 >> ~/.ssh/known_hosts
-      - name: Deploy Liquibase Changes via Jump Host
+
+      - name: Deploy Liquibase Changes via Jump Host (CLI)
         run: |
           ssh -i ~/.ssh/id_rsa pgadmin@98.71.128.218 << 'EOF'
             set -e
+
+            echo "[INFO] Switching to root user..."
             sudo su - root
-            # Clone or update repository
+
+            echo "[INFO] Cloning or updating Liquibase repo..."
             if [ ! -d "/mnt/Liquibase" ]; then
-              echo "Cloning repository..."
               git clone https://github.com/amit-pal-maersk/Liquibase.git /mnt/Liquibase
             else
-              echo "Repository exists. Pulling latest changes..."
               cd /mnt/Liquibase
               git pull origin main --rebase
             fi
-            # Ensure Maven is installed
-            if ! command -v mvn &> /dev/null; then
-              echo "Maven not found. Installing Maven..."
-              yum update -y
-              yum install -y maven
+
+            echo "[INFO] Installing Liquibase CLI if missing..."
+            if ! command -v liquibase &> /dev/null; then
+              curl -sL https://github.com/liquibase/liquibase/releases/download/v4.26.0/liquibase-4.26.0.tar.gz -o liquibase.tar.gz
+              tar -xzf liquibase.tar.gz
+              mv liquibase /usr/local/bin/
+              echo "[INFO] Liquibase installed."
             fi
-            # Run Liquibase update (relies on liquibase.properties)
+
+            echo "[INFO] Running Liquibase update..."
             cd /mnt/Liquibase
-            mvn liquibase:update
-            mvn liquibase:history
-            
-            echo "Liquibase deployment completed successfully"
+
+            if [ ! -f "liquibase.properties" ]; then
+              echo "[ERROR] liquibase.properties not found in /mnt/Liquibase"
+              exit 1
+            fi
+
+            liquibase update
+            liquibase history
+
+            echo "[INFO] Liquibase deployment completed successfully"
           EOF
