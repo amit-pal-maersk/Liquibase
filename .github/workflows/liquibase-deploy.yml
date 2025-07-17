@@ -85,7 +85,7 @@ jobs:
                 echo "[ERROR] liquibase.properties not found!"
                 exit 1
               fi
-
+              cd /mnt/liquibaseproject
               liquibase update
               liquibase history
 
