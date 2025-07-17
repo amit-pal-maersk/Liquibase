@@ -65,6 +65,7 @@ jobs:
                 curl -sL https://github.com/liquibase/liquibase/releases/download/v4.26.0/liquibase-4.26.0.tar.gz -o liquibase.tar.gz
                 tar -xzf liquibase.tar.gz -C /mnt/liquibase-software
                 rm liquibase.tar.gz
+                rm -rf /usr/local/bin/liquibase
                 ln -sf /mnt/liquibase-software/liquibase /usr/local/bin/liquibase
                 echo "[INFO] Liquibase CLI installed."
               else
