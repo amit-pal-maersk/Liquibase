@@ -74,6 +74,7 @@ jobs:
             # Run Liquibase update (relies on liquibase.properties)
             cd /mnt/Liquibase
             mvn liquibase:update
+            mvn liquibase:history
             
             echo "Liquibase deployment completed successfully"
           EOF
