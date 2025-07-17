@@ -11,6 +11,9 @@ on:
 jobs:
   ci:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ github.workspace }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -19,7 +22,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           java-version: '17'
-          distribution: 'temurin'
+          distribution: temurin
 
       - name: Cache Maven packages
         uses: actions/cache@v3
@@ -29,14 +32,10 @@ jobs:
           restore-keys: ${{ runner.os }}-m2
 
       - name: Run Tests
-        run: |
-          cd /mnt/Liquibase
-          mvn test
+        run: mvn test
 
       - name: Build with Maven
-        run: |
-          cd /mnt/Liquibase
-          mvn clean package -DskipTests
+        run: mvn clean package -DskipTests
 
   cd:
     needs: ci
@@ -47,42 +46,30 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup SSH key
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.JUMP_HOST_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-
-      - name: Add Jump Host to known_hosts
-        run: |
-          ssh-keyscan -H 98.71.128.218 >> ~/.ssh/known_hosts
-
-      - name: Deploy Liquibase Changes via Jump Host
-        run: |
-          ssh -i ~/.ssh/id_rsa pgadmin@98.71.128.218 << 'EOF'
+      - name: Deploy Liquibase changes via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: pgadmin
+          key: ${{ secrets.JUMP_HOST_PRIVATE_KEY }}
+          port: 22
+          script: |
             set -e
             sudo su - root
 
-            # Clone or update repository
-            if [ ! -d "/mnt/Liquibase" ]; then
-              echo "Cloning repository..."
-              git clone https://github.com/amit-pal-maersk/Liquibase.git /mnt/Liquibase
+            REPO_DIR='/mnt/Liquibase'
+            if [ ! -d "${REPO_DIR}" ]; then
+              git clone https://github.com/amit-pal-maersk/Liquibase.git "${REPO_DIR}"
             else
-              echo "Repository exists. Pulling latest changes..."
-              cd /mnt/Liquibase
+              cd "${REPO_DIR}"
               git pull origin main --rebase
             fi
 
-            # Ensure Maven is installed
             if ! command -v mvn &> /dev/null; then
-              echo "Maven not found. Installing Maven..."
               yum update -y
               yum install -y maven
             fi
 
-            # Run Liquibase update (relies on liquibase.properties)
-            cd /mnt/Liquibase
+            cd "${REPO_DIR}"
             mvn liquibase:update
-            
             echo "Liquibase deployment completed successfully"
-          EOF
