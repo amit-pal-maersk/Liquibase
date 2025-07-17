@@ -32,29 +32,23 @@ jobs:
           distribution: 'temurin'
 
       - name: Cache Maven packages
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2
 
       - name: Run Tests
-        run: |
-          cd ${GITHUB_WORKSPACE}
-          mvn test
+        run: mvn test
 
       - name: Build with Maven
-        run: |
-          cd ${GITHUB_WORKSPACE}
-          mvn clean package -DskipTests
+        run: mvn clean package -DskipTests
 
   cd:
     needs: ci
     runs-on: ubuntu-latest
-    # Run CD job for push to main or manual workflow_dispatch
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
-    # Use GitHub Environments for environment-specific secrets
-    environment: ${{ github.event.inputs.environment || 'Test' }} # Default to Test for push
+    environment: ${{ github.event.inputs.environment || 'Test' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -65,10 +59,8 @@ jobs:
           if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
             echo "ENVIRONMENT=${{ github.event.inputs.environment }}" >> $GITHUB_ENV
           else
-            # Default to Test for push to main; override with GitHub Environment
-            echo "ENVIRONMENT=${{ github.event.inputs.environment || 'Test' }}" >> $GITHUB_ENV
+            echo "ENVIRONMENT=Test" >> $GITHUB_ENV
           fi
-
       - name: Set Environment Variables
         id: set-env
         run: |
@@ -77,39 +69,40 @@ jobs:
               echo "SSH_HOST=98.71.128.218" >> $GITHUB_ENV
               echo "SSH_CREDENTIALS=JUMP_HOST_PRIVATE_KEY_TEST" >> $GITHUB_ENV
               echo "REPO_DIR=/mnt/Liquibase-Test" >> $GITHUB_ENV
+              echo "CHANGELOG_FILE=src/main/resources/db/changelog/db.changelog-master.xml" >> $GITHUB_ENV
               ;;
             Non-Prod)
               echo "SSH_HOST=98.71.128.219" >> $GITHUB_ENV
               echo "SSH_CREDENTIALS=JUMP_HOST_PRIVATE_KEY_NONPROD" >> $GITHUB_ENV
               echo "REPO_DIR=/mnt/Liquibase-NonProd" >> $GITHUB_ENV
+              echo "CHANGELOG_FILE=src/main/resources/db/changelog/db.changelog-master.xml" >> $GITHUB_ENV
               ;;
             Prod)
               echo "SSH_HOST=98.71.128.220" >> $GITHUB_ENV
               echo "SSH_CREDENTIALS=JUMP_HOST_PRIVATE_KEY_PROD" >> $GITHUB_ENV
               echo "REPO_DIR=/mnt/Liquibase-Prod" >> $GITHUB_ENV
+              echo "CHANGELOG_FILE=src/main/resources/db/changelog/db.changelog-master.sql" >> $GITHUB_ENV
               ;;
             *)
               echo "Invalid environment: ${{ env.ENVIRONMENT }}"
               exit 1
               ;;
           esac
-
       - name: Setup SSH key
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets[env.SSH_CREDENTIALS] }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-
       - name: Add Jump Host to known_hosts
-        run: |
-          ssh-keyscan -H ${{ env.SSH_HOST }} >> ~/.ssh/known_hosts
-
+        run: ssh-keyscan -H ${{ env.SSH_HOST }} >> ~/.ssh/known_hosts
       - name: Deploy Liquibase Changes via Jump Host
         run: |
           ssh -i ~/.ssh/id_rsa pgadmin@${{ env.SSH_HOST }} << 'EOF'
             set -e
-            sudo su - root
-
+            # Ensure directory exists and has permissions
+            sudo mkdir -p ${{ env.REPO_DIR }}
+            sudo chown -R pgadmin:pgadmin ${{ env.REPO_DIR }}
+            
             # Clone or update repository
             if [ ! -d "${{ env.REPO_DIR }}" ]; then
               echo "Cloning repository to ${{ env.REPO_DIR }}..."
@@ -117,25 +110,29 @@ jobs:
             else
               echo "Repository exists. Pulling latest changes..."
               cd ${{ env.REPO_DIR }}
+              git checkout main
               git pull origin main --rebase
             fi
-
+            
             # Ensure Maven is installed
             if ! command -v mvn &> /dev/null; then
               echo "Maven not found. Installing Maven..."
-              yum update -y
-              yum install -y maven
+              sudo yum update -y
+              sudo yum install -y maven
             fi
-
+            
             # Create liquibase.properties
             cd ${{ env.REPO_DIR }}
-            echo "liquibase.url=${{ secrets.DB_URL }}" > liquibase.properties
-            echo "liquibase.username=${{ secrets.DB_USERNAME }}" > liquibase.properties
-            echo "liquibase.password=${{ secrets.DB_PASSWORD }}" > liquibase.properties
-
+            cat > liquibase.properties << 'EOL'
+            changeLogFile=${{ env.CHANGELOG_FILE }}
+            driver=org.postgresql.Driver
+            url=${{ secrets.DB_URL }}
+            username=${{ secrets.DB_USERNAME }}
+            password=${{ secrets.DB_PASSWORD }}
+            EOL
+            
             # Run Liquibase update
-            mvn liquibase:update > liquibase_update.log 2>&1
+            mvn liquibase:update -Dliquibase.propertyFile=liquibase.properties > liquibase_update.log 2>&1
             cat liquibase_update.log
-
             echo "Liquibase deployment to ${{ env.ENVIRONMENT }} completed successfully"
           EOF
