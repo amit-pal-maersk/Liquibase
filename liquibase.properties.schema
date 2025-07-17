@@ -1,0 +1,14 @@
+# Target DB connection (example uses your provided host and DB)
+url=jdbc:postgresql://NSIT01MANAGEDOMNIBASEDBAASPOSTGPAASROLE53.postgres.database.azure.com:5432/postgres
+username=pgbigboss
+password=3jCQm9jaHNd6jPvVFa
+driver=org.postgresql.Driver
+
+# Reference DB connection (assuming different DB for comparison - update accordingly)
+referenceUrl=jdbc:postgresql://nsit01managedomnibasedbaaspostgpaasmigra50.postgres.database.azure.com:5432/postgres
+referenceUsername=pgbigboss
+referencePassword=3jCQm9jaHNd6jPvVFa
+referenceDriver=org.postgresql.Driver
+
+# Default changelog file
+changeLogFile=changelog/db.changelog-schema_master.xml
