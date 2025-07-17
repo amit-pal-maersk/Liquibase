@@ -66,6 +66,7 @@ jobs:
                 tar -xzf liquibase.tar.gz -C /mnt/liquibase-software
                 rm liquibase.tar.gz
                 rm -rf /usr/local/bin/liquibase
+                chmod +x /mnt/liquibase-software/liquibase
                 ln -sf /mnt/liquibase-software/liquibase /usr/local/bin/liquibase
                 echo "[INFO] Liquibase CLI installed."
               else
