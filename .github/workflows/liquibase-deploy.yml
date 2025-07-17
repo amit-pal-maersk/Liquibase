@@ -30,12 +30,14 @@ jobs:
 
       - name: Run Tests
         run: |
-          cd /mnt/Liquibase
+          # Use the workspace directory where the repo is cloned
+          cd ${GITHUB_WORKSPACE}
           mvn test
 
       - name: Build with Maven
         run: |
-          cd /mnt/Liquibase
+          # Use the workspace directory where the repo is cloned
+          cd ${GITHUB_WORKSPACE}
           mvn clean package -DskipTests
 
   cd:
