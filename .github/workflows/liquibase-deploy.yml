@@ -82,11 +82,6 @@ jobs:
 
               echo "[INFO] Running Liquibase update..."
               cd /mnt/liquibaseproject
-              if [ ! -f liquibase.properties ]; then
-                echo "[ERROR] liquibase.properties not found!"
-                exit 1
-              fi
-              cd /mnt/liquibaseproject
               liquibase update
               liquibase history
 
