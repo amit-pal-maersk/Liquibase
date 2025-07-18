@@ -1,5 +1,5 @@
 --liquibase formatted sql
---changeset amit:1 labels:example-label context:example-context
+--changeset amit:1 labels:create-label context:dev
 
 
 CREATE TABLE department (
