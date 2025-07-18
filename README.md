@@ -3,9 +3,10 @@
 
 This project automates Liquibase deployments using:
 
-- **GitHub Actions** triggered on every `main` push
+- **GitHub Actions** triggered on every `main` push or manual run
 - **SSH-based deployment** from a jump host
 - **Maven integration** and formatted SQL changelogs
+- ** Liquibase Insttaltion **
 
 ## 🔐 Setup
 
@@ -21,3 +22,4 @@ Push your SQL changes under `src/main/resources/db/changelog/` and let CI/CD app
 git add src/main/resources/db/changelog/*.xml
 git commit -m "Add new changeset for feature X"
 git push origin main
+
