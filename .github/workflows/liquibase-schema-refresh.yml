@@ -81,11 +81,11 @@ jobs:
                 git pull origin main --rebase
               fi
 
-              echo "[INFO] Running Liquibase update..."
+              echo "[INFO] Running Liquibase schema difference..."
               cd /mnt/liquibaseproject
               export PATH=/mnt/liquibase-software:$PATH
-              liquibase update
-              liquibase history
+              liquibase diff
+              liquibase diff-changelog
 
               echo "[INFO] Liquibase deployment completed successfully."
             '
