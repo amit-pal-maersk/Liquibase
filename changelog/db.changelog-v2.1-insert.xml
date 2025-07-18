@@ -44,4 +44,8 @@
     </rollback>
   </changeSet>
 
+  <changeSet id="9" author="amit">
+    <tagDatabase tag="v2.1"/>
+  </changeSet>
+
 </databaseChangeLog>
