@@ -14,5 +14,5 @@ insert into company (name, address1, address2, city) values
     ('Gamma1 Solutions', '301 Tech Ave', '', 'Ogdenville');
 
 -- UPDATE person set country
-update department set country = 'US' where country is null;
+--update department set country = 'US' where country is null;
 
