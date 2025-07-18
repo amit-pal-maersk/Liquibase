@@ -11,6 +11,6 @@
     <include file="insert1.sql" relativeToChangelogFile="true"/>
 
     <changeSet id="schema-version1.0" author="amit">
-        <tagDatabase tag="release-1.0"/>
+        <tagDatabase tag="release-4.0"/>
     </changeSet>
 </databaseChangeLog>
