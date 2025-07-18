@@ -2,10 +2,10 @@
 --changeset Amit:rollback_1
 
 -- Rollback from department
-rollback delete from department where name in ('amit1','pal1','sudeep1');
+delete from department where name in ('amit1','pal1','sudeep1');
 
 -- Rollback from company
-rollback delete from company where name in ('Acme1 Corp','Beta1 Enterprises','Gamma1 Solutions');
+delete from company where name in ('Acme1 Corp','Beta1 Enterprises','Gamma1 Solutions');
 
 -- Rollback update from department
-rollback update person set country = null where name in ('amit1','pal1','sudeep1');
+update person set country = null where name in ('amit1','pal1','sudeep1');
